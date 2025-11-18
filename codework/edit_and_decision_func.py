@@ -261,15 +261,17 @@ def config_opener(config_file: str = CONFIG_PATH) -> dict:
     # want to persist changes back to disk.
     if not os.path.exists(config_file):
         print(
-            f"Welcome. Looks like its your first time here so lets set up a config file. It will be made in the current directory,  \n"
+            "Welcome. Looks like its your first time here so lets set up a config file. It will be made in the current directory,  \n"
         )
         return {"organizations": []}  # Return a default structure
 
     try:
         with open(config_file, "r") as f:
             config_data = json.load(f)
+            print("Config loaded sucessfully.")
         # Ensure the top-level key exists for compatibility
         if "organizations" not in config_data:
+            "Hmmmm looks like the config file is missing the 'organizations' key. Initializing it now but you'll have to re-add any orgs you had before."
             config_data = {"organizations": []}
         return config_data
     except json.JSONDecodeError:
@@ -518,7 +520,7 @@ def manage_scans_menu(config_data):
 
 
 def manage_orgs_menu(config_data):
-    """Your config_options function, now as a menu router."""
+    """config_options function as a menu router."""
     # Simple router to map a user's selection to the concrete add/remove/rename
     # operations. Each operation mutates `config_data` and persists changes via
     # `save_config` when appropriate.

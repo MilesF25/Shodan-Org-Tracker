@@ -1,21 +1,25 @@
 import semi_main
 import questionary
 
-"""This file is to get figure out what the user wants to scan and returns the queries in list"""
-# plan, 1. look at config for org query to scan
-# will again show the orgs and the orgs in it, will ask the user to select
-# load config file or go through it
+# goal
+"""
+    Build a structured list of organizations with their queries.
 
-# single scan, mutliple scan, and org scans and everything (maybe)
+    Returns:
+        List of dicts with format:
+        [
+            {
+                'org_name': 'Example Org',
+                'queries': [
+                    {'query': 'ssl:"example.com"'},
+                    {'query': 'org:"Example Inc"'
+                ]
+            },
+            ...
+        ]
+        """
 
 
-# 2. use shodan api to scan for the org
-# 3. save results to sqlite db
-# 4. comparison to see difference since last scan
-# will also need to make a function for daily scans, have user set list of what orgs to scan and maybe time. also keep track of api usage
-
-
-# this function will figure out what the user wants to scan, either they select a single org scan, multiple org scans, or all org scans
 def scan_choice():
     decision = questionary.select(
         "Select what kind of scan you'd like to perform:",
@@ -30,151 +34,138 @@ def scan_choice():
     return decision
 
 
-# let ai auto completes, hopefully it works hah
-def shodan_all_org_scans(config_data):
-    """Function to scan all orgs in the config file"""
+# thif function is for selecting all the orgs and getting their queries. it will return a dict with the org and all of its orgs and queries
+
+
+def all_scan(
+    config_file,
+) -> list:  # this will return a list wiht all the names of the orgs to get queries for.
+    # will get the names of the orgs from a the config file
     print("Selected All Org Scans\n")
-    queries_to_process = []
-
-    for org in config_data["organizations"]:
-        targets = org.get("targets_to_monitor") or []
-        if not targets:
-            print(f"No targets defined for '{org['name']}'.")
-            continue
-
-        for t in targets:
-            q = t.get("query")
-            if q:
-                queries_to_process.append(q)
-
-    print(f"\nCollected {len(queries_to_process)} queries from all orgs.")
-    return queries_to_process
+    org_names = [
+        org.get("organization_name") for org in config_file.get("organizations", [])
+    ]
+    return org_names
 
 
-# let ai improve
-def shodan_scans_menu_multiple(config_data):
+def multiple_scans(config_file) -> list:
     """Menu to manage scan targets for a selected organization."""
     # Informational header
-    print("Selected Multiple Org Scan\n")
+
     # Build a list of organization names from the config for the selection UI
     org_choices = [
-        org["name"] for org in config_data["organizations"]
+        org["organization_name"] for org in config_file["organizations"]
     ]  # list comprehension -> ['Org A', 'Org B', ...]
 
     # If there are no organizations configured, inform the user and exit
     if not org_choices:
         print("\nPlease add an organization first.")  # user feedback
-        return  # no org to manage, so return early
+        return []  # no org to manage, so return early
 
     # Ask the user to pick which organization's scan targets to manage
-    selected_org_name = questionary.checkbox(
-        "Select what orgs you'd like to scan",  # prompt text
+    selected_org_names = questionary.checkbox(
+        "Select what orgs you'd like to scan:",  # prompt text
         choices=org_choices,  # choices shown in the select menu
         qmark="",  # visual style configuration
-    ).ask()  #
-    # If the user cancelled the selection (None) or selected none, return an empty list
-    if not selected_org_name:
-        return print("No orgs selected or user cancelled.")
+    ).ask()
 
-    # Collect all queries from the selected organizations' targets
-    queries_to_process = []
-
-    for org_name in selected_org_name:
-        # Find the organization object by name
-        org_object = next(
-            (org for org in config_data["organizations"] if org["name"] == org_name),
-            None,
+    if selected_org_names is None:
+        print(
+            "Looks like there isn't anything selected, double check the config file to make sure there are orgs in there. OR user quit"
         )
+        return []
 
-        if not org_object:
-            # Shouldn't happen, but skip if no match
-            print(f"Warning: organization '{org_name}' not found in config.")
-            continue
-
-        # If the org has no targets configured, skip with a friendly message
-        targets = org_object.get("targets_to_monitor") or []
-        if not targets:
-            print(f"No targets defined for '{org_name}'.")
-            continue
-
-        # Extend the queries list with each target's 'query' value
-        for t in targets:
-            q = t.get("query")
-            if q:
-                queries_to_process.append(q)
-
-    # Optionally show a brief summary to the user
-    print(
-        f"\nCollected {len(queries_to_process)} queries from {len(selected_org_name)} org(s)."
-    )
-
-    # Return the list of query strings for processing later
-    return queries_to_process
+    return selected_org_names
 
 
-# my original version
-def shodan_scans_menu_single(config_data):
+def single_scan(config_file):
     """Menu to manage scan targets for a selected organization."""
     print("Selected Single Org Scan\n")
     # Build a list of organization names from the config for the selection UI
     org_choices = [
-        org["name"] for org in config_data["organizations"]
+        org["organization_name"]
+        for org in config_file["organizations"]
+        # org["name"] for org in config_file["organizations"]
     ]  # list comprehension -> ['Org A', 'Org B', ...]
 
     # If there are no organizations configured, inform the user and exit
     if not org_choices:
         print("\nPlease add an organization first.")  # user feedback
         return  # no org to manage, so return early
+    try:
+        # Ask the user to pick which organization's scan targets to manage
+        selected_org_name = questionary.select(
+            "Select what orgs you'd like to scan",  # prompt text
+            choices=org_choices,  # choices shown in the select menu
+            qmark="",  # visual style configuration
+        ).ask()  # .ask() displays the prompt and returns the selected value (or None)
 
-    # Ask the user to pick which organization's scan targets to manage
-    selected_org_name = questionary.select(
-        "Select what orgs you'd like to scan",  # prompt text
-        choices=org_choices,  # choices shown in the select menu
-        qmark="",  # visual style configuration
-    ).ask()  # .ask() displays the prompt and returns the selected value (or None)
+        if selected_org_name is None:
+            print(
+                "Looks like there isn't anything selected, double check the config file to make sure there are orgs in there. OR user quit"
+            )
+            return []
+        print(type(selected_org_name))
+    except Exception as e:
+        print(f"An error occurred during selection: {e}")
+        return []
+    # needs to be a list becuase the other functions expect a list, if not it iterates through each character
+    return [selected_org_name]
 
-    # If the user cancelled the selection (None), stop here
-    if not selected_org_name:
-        return
 
-    # Locate the organization dict that matches the selected name
-    org_object = next(
-        (
-            org
-            for org in config_data["organizations"]
-            if org["name"] == selected_org_name
-        ),
-        None,  # default if no match found
-    )
+def query_structure(org_names: list, config_file: dict) -> dict:
+    """
+    Transforms organization data into a structured query format.
 
-    # If we couldn't find the organization (shouldn't happen normally), abort
-    if not org_object:
-        return
+    Args:
+        org_names: List of organization names to process
+        config_file: Configuration dictionary containing organizations
 
-    # Display header for the scan target listing
-    print(f"\n--- Current Scan Targets for '{selected_org_name}' ---")
+    Returns:
+        Dict with format:
+        {
+            'Example Org': {
+                'queries': [
+                    {'query': 'ssl:"example.com"'},
+                    {'query': 'org:"Example Inc"'}
+                ]
+            },
+            ...
+        }
+    """
+    result = {}
 
-    # If the org has no targets configured, print 'None.' otherwise list them
-    if not org_object["targets_to_monitor"]:
-        # Set to none if there are no queires
-        queries = None
-
-    else:
-        # here is where they can select scan all, select amount or scan 1
-        queries = questionary.checkbox(
-            "Select which targets to scan:",
-            choices=org_object["targets_to_monitor"],
-            qmark="",
-        ).ask()
-    if queries == None:
-        print(
-            "You're seeing this because there are probably no queries in the selected organization(s). Go back and add some"
+    for org_name in org_names:
+        # Find the organization object
+        org_object = next(
+            (
+                org
+                for org in config_file["organizations"]
+                if org["organization_name"] == org_name
+            ),
+            None,
         )
-    else:
-        return queries
+
+        if not org_object:
+            print(f"Warning: organization '{org_name}' not found in config.")
+            continue
+
+        # Get targets for this org
+        targets = org_object.get("targets_to_monitor") or []
+        if not targets:
+            print(f"No targets defined for '{org_name}'. Skipping.")
+            continue
+
+        # Build the queries list from targets
+        queries = [{"query": target["query"]} for target in targets]
+
+        # Add to result dict using org name as key
+        result[org_object["organization_name"]] = {"queries": queries}
+
+    return result
 
 
-def main():
+def query_collect():
     """This function will return the queires for all the orgs in a list"""
     # first will load config
     config_data = semi_main.config_opener()
@@ -184,14 +175,17 @@ def main():
     # then will go to the scan management menu
     decision = scan_choice()
     if decision == "Single Org Scan":
-        query_list = shodan_scans_menu_single(config_data)
+        query_list = single_scan(config_data)
     elif decision == "Multiple Org Scans":
-        query_list = shodan_scans_menu_multiple(config_data)
+        query_list = multiple_scans(config_data)
     elif decision == "All Org Scans":
         print(
             "You will be scanning every organization and its queiries. Make sure to check if you have the resources to!"
         )
-        query_list = shodan_all_org_scans(config_data)
+        check = input("Are you sure you want to continue? (y/n): ")
+        if check.lower() == "y":
+            query_list = all_scan(config_data)
+        print(query_list)
     else:
         print("scan cancelled")
 
@@ -201,7 +195,9 @@ def main():
         #     )
         # else:
         # need to handle if query is empty
-    return print(query_list)
+
+    query_dict = query_structure(query_list, config_data)
+    return print(f"this is !!!!!! {query_dict}")
 
 
-main()
+# TODO check the other queires functions and see if they need to be updated to match this new strucutre

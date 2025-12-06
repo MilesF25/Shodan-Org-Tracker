@@ -115,30 +115,16 @@ def single_scan(config_file):
     return [selected_org_name]
 
 
+# thank u ai
 def query_structure(org_names: list, config_file: dict) -> dict:
     """
-    Transforms organization data into a structured query format.
-
-    Args:
-        org_names: List of organization names to process
-        config_file: Configuration dictionary containing organizations
-
-    Returns:
-        Dict with format:
-        {
-            'Example Org': {
-                'queries': [
-                    {'query': 'ssl:"example.com"'},
-                    {'query': 'org:"Example Inc"'}
-                ]
-            },
-            ...
-        }
+    Transforms organization data into a structured query format
+    including property names for clarity.
     """
     result = {}
 
     for org_name in org_names:
-        # Find the organization object
+        # Find the organization object efficiently
         org_object = next(
             (
                 org
@@ -154,20 +140,27 @@ def query_structure(org_names: list, config_file: dict) -> dict:
 
         # Get targets for this org
         targets = org_object.get("targets_to_monitor") or []
+
+        # If no targets exist, skip this org (or handle as preferred)
         if not targets:
-            print(f"No targets defined for '{org_name}'. Skipping.")
+            # Optional: Print informational message
+            # print(f"No targets defined for '{org_name}'. Skipping.")
             continue
 
-        # Build the queries list from targets
-        queries = [{"query": target["query"]} for target in targets]
+        # Build the queries list, now including the Property Name
+        queries = [
+            {"property name": target["property_name"], "query": target["query"]}
+            for target in targets
+        ]
 
-        # Add to result dict using org name as key
+        # Add to result dict
         result[org_object["organization_name"]] = {"queries": queries}
 
     return result
 
 
 def query_collect():
+    # was supposed to have config file be passed but i already called it
     """This function will return the queires for all the orgs in a list"""
     # first will load config
     config_data = semi_main.config_opener()
@@ -203,8 +196,8 @@ def query_collect():
         )
         return
     query_dict = query_structure(query_list, config_data)
-    return query_dict
-    # return print(f"this is !!!!!! {query_dict}")
+    # return query_dict
+    return print(f"{query_dict}")
 
 
-# TODO check the other queires functions and see if they need to be updated to match this new strucutre
+# COmplete: check the other queires functions and see if they need to be updated to match this new strucutre

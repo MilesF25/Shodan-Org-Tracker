@@ -1,6 +1,7 @@
 import semi_main
 import questionary
 
+# had ai add comments
 # goal
 """
     Build a structured list of organizations with their queries.
@@ -64,14 +65,14 @@ def multiple_scans(config_file) -> list:
 
     # Ask the user to pick which organization's scan targets to manage
     selected_org_names = questionary.checkbox(
-        "Select what orgs you'd like to scan:",  # prompt text
-        choices=org_choices,  # choices shown in the select menu
-        qmark="",  # visual style configuration
+        "Select what orgs you'd like to scan:",
+        choices=org_choices,
+        qmark="",  # removes question mark
     ).ask()
 
     if selected_org_names is None:
         print(
-            "Looks like there isn't anything selected, double check the config file to make sure there are orgs in there. OR user quit"
+            "Looks like there isn't anything selected, make sure you used the spacebar to select the orgs. Make sure to check config file to verify there are orgs in there. OR user quit"
         )
         return []
 
@@ -105,7 +106,8 @@ def single_scan(config_file):
                 "Looks like there isn't anything selected, double check the config file to make sure there are orgs in there. OR user quit"
             )
             return []
-        print(type(selected_org_name))
+        # added just for check
+        # print(type(selected_org_name))
     except Exception as e:
         print(f"An error occurred during selection: {e}")
         return []
@@ -185,7 +187,7 @@ def query_collect():
         check = input("Are you sure you want to continue? (y/n): ")
         if check.lower() == "y":
             query_list = all_scan(config_data)
-        print(query_list)
+
     else:
         print("scan cancelled")
 
@@ -195,9 +197,14 @@ def query_collect():
         #     )
         # else:
         # need to handle if query is empty
-
+    if not query_list:
+        print(
+            "Looks like there isn't anything selected, double check the config file to make sure there are orgs in there and run the program again. OR there is another issue tbd"
+        )
+        return
     query_dict = query_structure(query_list, config_data)
-    return print(f"this is !!!!!! {query_dict}")
+    return query_dict
+    # return print(f"this is !!!!!! {query_dict}")
 
 
 # TODO check the other queires functions and see if they need to be updated to match this new strucutre

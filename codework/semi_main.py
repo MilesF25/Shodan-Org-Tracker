@@ -13,6 +13,15 @@ CONFIG_PATH = "config.json"
 # ==============================================================================
 
 
+# TODO: piviot: the goal is to now have the user enter the orgs and queires for known assets. each asset will have a query that can find it
+# if a scan for the org is run, it should find the assets, but if it finds an asset not registered it should alert the user.
+# what is in the configi is the konown assets and their queries to find them
+
+
+# TODO: DB compare should jsut look at the org name and then look at the table for quick look up. if org matches then look at ip to find.
+# if ip don't match anything raise flag
+
+
 def config_opener(config_file: str = CONFIG_PATH) -> dict:
     """Function to open and load the configuration file."""
     # Return a normalized config structure. If the file doesn't exist we return
@@ -22,6 +31,9 @@ def config_opener(config_file: str = CONFIG_PATH) -> dict:
     if not os.path.exists(config_file):
         print(
             "Welcome. Looks like its your first time here so lets set up a config file. It will be made in the current directory, \n"
+        )
+        print(
+            "Everything in the config file should be a known asset of the organization. \n"
         )
         return {"organizations": []}  # Return a default structure
     try:
@@ -221,6 +233,7 @@ def remove_scan_target(org_object):
 def manage_scans_menu(config_data):
     """Menu to manage scan targets for a selected organization."""
     # Build a list of organization names from the config for the selection UI
+    print("Do ctrl+c to exit back to menu\n")
     org_choices = [
         org["organization_name"] for org in config_data["organizations"]
     ]  # list comprehension -> ['Org A', 'Org B', ...]

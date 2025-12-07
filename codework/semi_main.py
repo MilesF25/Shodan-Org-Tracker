@@ -15,6 +15,7 @@ CONFIG_PATH = "config.json"
 # TODO: NEW PIVIOT: use nmap to scan network and find devices on it.
 # TODO: setup config should do an initial nmap scan to find devices on the network and add them to config
 # basically it would ask them for an ip range, a name for that range incase there are different segments (ex: accounting [asster: ipinfo])
+# todo: back on hiatus for now
 
 
 def config_opener(config_file: str = CONFIG_PATH) -> dict:

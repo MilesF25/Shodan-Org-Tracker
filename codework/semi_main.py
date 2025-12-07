@@ -12,14 +12,9 @@ CONFIG_PATH = "config.json"
 # --- Helper Functions (Slightly modified for new structure) ---
 # ==============================================================================
 
-
-# TODO: piviot: the goal is to now have the user enter the orgs and queires for known assets. each asset will have a query that can find it
-# if a scan for the org is run, it should find the assets, but if it finds an asset not registered it should alert the user.
-# what is in the configi is the konown assets and their queries to find them
-
-
-# TODO: DB compare should jsut look at the org name and then look at the table for quick look up. if org matches then look at ip to find.
-# if ip don't match anything raise flag
+# TODO: NEW PIVIOT: use nmap to scan network and find devices on it.
+# TODO: setup config should do an initial nmap scan to find devices on the network and add them to config
+# basically it would ask them for an ip range, a name for that range incase there are different segments (ex: accounting [asster: ipinfo])
 
 
 def config_opener(config_file: str = CONFIG_PATH) -> dict:
